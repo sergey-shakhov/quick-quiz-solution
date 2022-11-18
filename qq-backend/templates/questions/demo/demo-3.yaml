@@ -1,0 +1,12 @@
+quizQuestionTemplateId: b93db1f5-0d1c-4a4b-80af-c14367112ed8
+quizTemplates: ['demo']
+type: text-input
+timeInSeconds: 120
+author:
+  name: Сергей Шахов
+  email: sergey@shakhov.online
+questionTextInMarkdown: Как называется Utility Type в TypeScript, который позволяет исключить из заданного типа несколько ключей (свойств)?
+answerOptions: 
+  - answerTextInMarkdown: Введите ответ, используйте только латинские буквы, с учётом регистра
+    isCorrect: true
+    value: Omit

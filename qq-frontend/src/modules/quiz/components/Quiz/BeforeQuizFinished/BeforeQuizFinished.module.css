@@ -1,0 +1,11 @@
+.component {
+
+}
+
+.relaxImage {
+  display: block;
+  margin: 24px auto;
+  width: 30%;
+  /* filter: invert(1) sepia(1) saturate(150) hue-rotate(175deg); */
+  filter: invert(97%) sepia(63%) saturate(6291%) hue-rotate(166deg) brightness(87%) contrast(125%);
+}

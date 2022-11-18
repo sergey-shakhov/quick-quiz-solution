@@ -1,0 +1,21 @@
+quizQuestionTemplateId: b93db1f5-0d1c-4a4b-80af-c14367112ed8
+quizTemplates: ['demo']
+type: single-choice
+timeInSeconds: 120
+author:
+  name: Сергей Шахов
+  email: sergey@shakhov.online
+questionTextInMarkdown: На какой тип вы бы заменили ненавистный вам `any`?
+answerOptions: 
+  - answerTextInMarkdown: "`unknown`"
+    isCorrect: true
+  - answerTextInMarkdown: "`everything`"
+    isCorrect: false
+  - answerTextInMarkdown: "`object`"
+    isCorrect: false
+  - answerTextInMarkdown: "`class`"
+    isCorrect: false
+  - answerTextInMarkdown: Я обожаю `any`!
+    isCorrect: false
+randomization:
+  incorrectOptionLimit: 3

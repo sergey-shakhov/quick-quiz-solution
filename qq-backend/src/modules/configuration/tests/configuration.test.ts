@@ -1,0 +1,6 @@
+describe('Configuration module', () => {
+  it('', () => {
+    
+  });
+
+});

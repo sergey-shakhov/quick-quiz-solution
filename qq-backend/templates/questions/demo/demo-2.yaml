@@ -1,0 +1,38 @@
+quizQuestionTemplateId: 5cc5eb3f-ade0-4dc6-a129-aeb0d4ba168a
+quizTemplates: ['demo']
+type: multiple-choice
+timeInSeconds: 120
+author:
+  name: Сергей Шахов
+  email: sergey@shakhov.online
+questionTextInMarkdown: | 
+  Если мы хотите увидеть вопрос из нескольких строк и с примером кода - то вот он вам. 
+
+  Вот пример:
+
+  ```
+  const getExclamation = (): string => {
+    return 'Ого! Ага!';
+  };
+  const exclamation = getExclamation();
+  ```
+
+  Вопрос: чем является `getExclamation` в вышеприведённом коде?
+
+answerOptions: 
+  - answerTextInMarkdown: объектом
+    isCorrect: true
+  - answerTextInMarkdown: функцией
+    isCorrect: true
+  - answerTextInMarkdown: классом
+    isCorrect: false
+  - answerTextInMarkdown: generic-типом
+    isCorrect: false
+  - answerTextInMarkdown: оператором
+    isCorrect: false
+  - answerTextInMarkdown: вещью в себе
+    isCorrect: false
+
+randomization:
+  incorrectOptionLimit: 2
+  correctOptionLimit: 2
