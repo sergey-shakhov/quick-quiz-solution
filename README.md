@@ -73,4 +73,30 @@ Execute the following command from Git repositiry root to start QQ frontend in d
 
 ### 5. Happy hacking!
 
+You're done with installation. Then you need to create a quiz and run it, continue reading.
+
+## Using QQ
+
+## How to create quiz
+
+```
+[user@machine quick-quiz-solution]$ curl --verbose -X POST -H 'Content-Type: application/json' -H 'X-API-Key: <your-service-key>' -d '{"quizTemplateTechnicalName": "demo", "quizName": "Demo quiz", "expiresAt": "2023-06-10", "assignee": {"firstName": "Fyodor", "lastName": "Dostoevsky", "email": "dostoevsky@example.com"}}' http://localhost:8080/quizzes
+```
+
+Copy `id` of the quiz from JSON response.
+
+## How to run the quiz you've just created
+
+Start the browser and type in address bar:
+
+```
+http://localhost:3000/quiz/<quiz-if-you-have-copied-from-json-response>
+```
+
+For example:
+
+```
+http://localhost:3000/quiz/3e730127-c293-4e7d-b713-53b4cc4104cf
+```
+
 Good luck! You can [create an issue](https://github.com/sergey-shakhov/quick-quiz-solution/issues/new) if you have any idea about the project.
