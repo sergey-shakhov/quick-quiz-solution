@@ -49,14 +49,14 @@
     "yup": "1.0.0-beta.8"
   },
   "scripts": {
-    "start": "ts-node src/app.ts",
-    "dev": "nodemon src/app.ts",
+    "start": "ts-node index.ts web",
+    "dev": "nodemon index.ts web",
     "db:migrate": "sequelize-cli db:migrate",
     "db:rollback": "sequelize-cli db:migrate:undo --name ",
     "db:rollback-all": "sequelize-cli db:migrate:undo:all",
     "lint": "eslint \"**/*.{ts,tsx, js}\"",
     "lint --fix": "eslint \"**/*.{ts,tsx, js}\" --fix",
-    "server": "ts-node-dev --rs --respawn --exit-child src/app.ts",
+    "server": "ts-node-dev --rs --respawn --exit-child index.ts",
     "test": "jest"
   }
 }
