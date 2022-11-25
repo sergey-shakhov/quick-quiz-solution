@@ -1,6 +1,6 @@
 service:
   apiKey: your-service-key
-  templateDirectory: templates
+  # templateDirectory: ./templates
 
 database:
   connectionUrl: postgres://qq_user:qq_passwd@127.0.0.1:5432/qq_db
