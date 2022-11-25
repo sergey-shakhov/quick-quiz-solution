@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import isEmpty from 'lodash/isEmpty';
-import appRootPath from 'app-root-path';
 import recursiveReadDir from 'recursive-readdir';
 import yaml from 'js-yaml';
 
@@ -14,9 +13,9 @@ let templates: { [key: string]: QuizTemplate} = {};
 
 async function readAllTemplates(moduleContext: ModuleContext) {
   const serviceConfiguration = moduleContext.configuration.get<ServiceConfiguration>(SERVICE_CONFIGURATION);
-  const templateDirectory = serviceConfiguration.templateDirectory || 'templates';
-  const quizzesDirectory = appRootPath.resolve(path.join(templateDirectory, 'quizzes'));
-  const questionsDirectory = appRootPath.resolve(path.join(templateDirectory, 'questions'));
+  const templateDirectory = serviceConfiguration.templateDirectory || process.env.QQ_TEMPLATE_DIRECTORY || 'templates';
+  const quizzesDirectory = path.join(templateDirectory, 'quizzes');
+  const questionsDirectory = path.join(templateDirectory, 'questions');
 
   const quizTemplateFilePaths = await recursiveReadDir(quizzesDirectory);
   const questionTemplateFilePaths = await recursiveReadDir(questionsDirectory);
