@@ -37,14 +37,14 @@ const QuizStep: React.FC<Props> = (props: Props) => {
   };
 
   const initialAnswer = () => {
-    return (props.quizStepModel.answer !== undefined) ? props.quizStepModel.answer : defaultAnswer();
+    return props.quizStepModel.answer ?? defaultAnswer();
   };
 
   const initialQuestionMarkedAsImperfect = () => {
     return (props.quizStepModel.questionMarkedAsImperfect !== undefined) ? props.quizStepModel.questionMarkedAsImperfect : false;
   };
 
-  const [answer, setAnswer] = useState<Answer | undefined>(initialAnswer());
+  const [answer, setAnswer] = useState<Answer>(initialAnswer());
   const [questionMarkedAsImperfect, setQuestionMarkedAsImperfect] = useState<boolean>(initialQuestionMarkedAsImperfect());
 
   const stepFrontendId = 'block_' + uniqueId();
@@ -59,11 +59,7 @@ const QuizStep: React.FC<Props> = (props: Props) => {
 
   const onNextClicked = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
     event.preventDefault();
-    if (answer !== undefined) {
-      props.onAnswerSavingRequested(answer, questionMarkedAsImperfect)
-    } else {
-      console.log('Answer not specified');
-    }
+    props.onAnswerSavingRequested(answer, questionMarkedAsImperfect);
   };
 
   const renderBlock = () => {
