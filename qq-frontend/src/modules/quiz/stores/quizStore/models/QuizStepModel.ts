@@ -20,7 +20,7 @@ type QuizStepModel = {
   type: QuizQuestionType;
   questionTextInMarkdown: string;
   answerOptions: AnswerOption[];
-  answer?: Answer;
+  answer: Answer | null;
   questionMarkedAsImperfect?: boolean;
   createdAt: string;
   answerSubmittedAt?: string;
