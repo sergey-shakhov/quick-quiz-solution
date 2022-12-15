@@ -64,7 +64,7 @@ const QuizStep: React.FC<Props> = (props: Props) => {
   };
 
   const onStepNavigationRequested = (stepIndex: number): void => {
-    if (answer !== undefined) {
+    if (answer !== undefined && answer !== null) {
       props.onAnswerSavingRequested(answer, questionMarkedAsImperfect, stepIndex);
     } else {
       console.log('Answer not specified');
