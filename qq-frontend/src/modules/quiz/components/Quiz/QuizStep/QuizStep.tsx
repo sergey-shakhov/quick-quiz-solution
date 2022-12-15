@@ -4,6 +4,7 @@ import times from 'lodash/times';
 import constant from 'lodash/constant';
 
 import RemainingTime from '../../RemainingTime';
+import RandomAccess from './RandomAccess';
 
 import SingleChoiceBlock from './SingleChoiceBlock';
 import MultipleChoiceBlock from './MultipleChoiceBlock';
@@ -20,7 +21,7 @@ import styles from './QuizStep.module.css';
 type Props = {
   quizModel: QuizModel;
   quizStepModel: QuizStepModel;
-  onAnswerSavingRequested: (answer: Answer, questionMarkedAsImperfect: boolean) => void;
+  onAnswerSavingRequested: (answer: Answer, questionMarkedAsImperfect: boolean, navigateToStepIndex?: number) => void;
 };
 
 const QuizStep: React.FC<Props> = (props: Props) => {
@@ -61,6 +62,14 @@ const QuizStep: React.FC<Props> = (props: Props) => {
     event.preventDefault();
     if (answer !== undefined) {
       props.onAnswerSavingRequested(answer, questionMarkedAsImperfect)
+    } else {
+      console.log('Answer not specified');
+    }
+  };
+
+  const onStepNavigationRequested = (stepIndex: number): void => {
+    if (answer !== undefined) {
+      props.onAnswerSavingRequested(answer, questionMarkedAsImperfect, stepIndex);
     } else {
       console.log('Answer not specified');
     }
@@ -108,6 +117,10 @@ const QuizStep: React.FC<Props> = (props: Props) => {
 
         <div>
           <a href="#" role="button" onClick={(event) => onNextClicked(event)}>{ props.quizStepModel.stepIndex >= props.quizModel.stepCount - 1 ? 'Завершить тестирование' : 'Дальше' }</a>
+          <div className={styles.randomAccessContainer}>
+            <RandomAccess onStepNavigationRequested={onStepNavigationRequested} />
+          </div>
+          
         </div>
       </article>
 

@@ -50,6 +50,7 @@ import service from './quizStore.service';
 
 class LocalStorageManager {
   private currentQuizStepIndexKey: string = 'qq_step';
+  private maxAvailableStepIndexKey: string = 'qq_max_step';
 
   saveCurrentQuizStepIndex(currentQuizStepIndex: number) {
     localStorage.setItem(this.currentQuizStepIndexKey, currentQuizStepIndex.toString())
@@ -67,6 +68,26 @@ class LocalStorageManager {
   clearCurrentQuizStepIndex() {
     localStorage.removeItem(this.currentQuizStepIndexKey);
   }
+
+
+  saveMaxAvailableStepIndex(currentQuizStepIndex: number) {
+    localStorage.setItem(this.maxAvailableStepIndexKey, currentQuizStepIndex.toString())
+  }
+
+  loadMaxAvailableStepIndex(): number | undefined {
+    const maxAvailableStepIndexAsString = localStorage.getItem(this.maxAvailableStepIndexKey);
+    if (maxAvailableStepIndexAsString) {
+      return parseInt(maxAvailableStepIndexAsString);
+    } else {
+      return undefined;
+    }
+  }
+
+  clearMaxAvailableStepIndex() {
+    localStorage.removeItem(this.maxAvailableStepIndexKey);
+  }
+
+
 }
 
 class QuizStore {
@@ -80,10 +101,13 @@ class QuizStore {
 
   liveRemainingTimeInSeconds: number | undefined;
 
+  maxAvailableStepIndex: number | undefined;
+
   constructor() {
     makeObservable(this, {
       currentQuiz: observable,
       currentQuizStep: observable,
+      maxAvailableStepIndex: observable,
       quizStatus: computed,
       remainingTimeInSeconds: computed,
       liveRemainingTimeInSeconds: observable,
@@ -94,6 +118,7 @@ class QuizStore {
       setCurrentQuizStep: action,
       unsetCurrentQuizStep: action,
       setLiveRemainingTimeInSeconds: action,
+      setMaxAvailableStepIndex: action,
     });
 
     this.localStorageManager = new LocalStorageManager();
@@ -147,9 +172,13 @@ class QuizStore {
       this.setCurrentQuiz(quiz);
       if (quiz.status === 'started') {
         const storedCurrentQuizStepIndex = this.localStorageManager.loadCurrentQuizStepIndex();
+        const storedMaxAvailableStepIndex = this.localStorageManager.loadMaxAvailableStepIndex();
         const stepIndex = storedCurrentQuizStepIndex !== undefined ? storedCurrentQuizStepIndex : 0;
         const quizStep = await service.getQuizStep(quizId, stepIndex);
         this.setCurrentQuizStep(quizStep);
+        if (storedMaxAvailableStepIndex) {
+          this.setMaxAvailableStepIndex(storedMaxAvailableStepIndex);
+        }
       }
       resolve();
     }, 0));
@@ -181,20 +210,18 @@ class QuizStore {
     }, 0));
   }
 
-  // setCurrentQuizAndStep(currentQuiz: QuizModel, currentQuizStep: QuizStepModel) {
-  //   this.currentQuiz = currentQuiz;
-  //   this.currentQuizStep = currentQuizStep;
-  // }
-
-  async saveAnswer(answer: Answer, questionMarkedAsImperfect: boolean): Promise<void> {
+  async saveAnswer(answer: Answer, questionMarkedAsImperfect: boolean, navigateToStepIndex?: number): Promise<void> {
     if (this.currentQuiz && this.currentQuiz.status === 'started' && this.currentQuizStep) {
       const patchedQuizStep = await service.patchQuizStep(this.quizId, this.currentQuizStep.stepIndex, answer, questionMarkedAsImperfect);
-      const nextQuizStepIndex = patchedQuizStep.stepIndex + 1;
+      const nextQuizStepIndex = navigateToStepIndex === undefined ? patchedQuizStep.stepIndex + 1 : navigateToStepIndex;
       if (nextQuizStepIndex < this.currentQuiz.stepCount) {
         const nextQuizStep = await service.getQuizStep(this.quizId, nextQuizStepIndex);
         const patchedQuiz = await service.getQuiz(this.quizId);
         this.setCurrentQuizStep(nextQuizStep);
         this.setCurrentQuiz(patchedQuiz);
+        if (navigateToStepIndex === undefined) {
+          this.setMaxAvailableStepIndex(nextQuizStepIndex);
+        }
       } else {
         const patchedQuiz = await service.patchQuizStatus(this.quizId, 'finishedExplicitly');
         this.unsetCurrentQuizStep();
@@ -202,6 +229,13 @@ class QuizStore {
       }
     }
 
+  }
+
+  async navigateToStep(stepIndex: number) {
+    const quizStep = await service.getQuizStep(this.quizId, stepIndex);
+    const quiz = await service.getQuiz(this.quizId);
+    this.setCurrentQuizStep(quizStep);
+    this.setCurrentQuiz(quiz);
   }
 
   setCurrentQuiz(currentQuiz: QuizModel) {
@@ -220,6 +254,11 @@ class QuizStore {
 
   setLiveRemainingTimeInSeconds(liveRemainingTimeInSeconds: number | undefined) {
     this.liveRemainingTimeInSeconds = liveRemainingTimeInSeconds;
+  }
+
+  setMaxAvailableStepIndex(maxAvailableStepIndex: number) {
+    this.maxAvailableStepIndex = maxAvailableStepIndex;
+    this.localStorageManager.saveMaxAvailableStepIndex(maxAvailableStepIndex);
   }
 
 }
