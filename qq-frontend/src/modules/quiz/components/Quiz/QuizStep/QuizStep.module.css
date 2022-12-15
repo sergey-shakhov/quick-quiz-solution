@@ -5,3 +5,7 @@
 .remainingTimeBox {
   text-align: right;
 }
+
+.randomAccessContainer {
+  float: right;
+}
