@@ -30,7 +30,7 @@ const TextInputBlock: React.FC<BlockProps> = (props: BlockProps) => {
             </Markdown>
           </div>
       }
-      <input type="text" id={fieldId} name={fieldId} placeholder="Введите ваш ответ здесь" required onChange={(event) => onValueChange(event)} />
+      <input type="text" id={fieldId} name={fieldId} placeholder="Введите ваш ответ здесь" required value={props.answer as string} onChange={(event) => onValueChange(event)} />
     </label>
   );
 };

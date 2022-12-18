@@ -15,8 +15,8 @@ const Quiz: React.FC<Props> = observer(() => {
     quizStore.startCurrentQuiz();
   };
 
-  const onAnswerSavingRequested = (answer: Answer, questionMarkedAsImperfect: boolean) => {
-    quizStore.saveAnswer(answer, questionMarkedAsImperfect);
+  const onAnswerSavingRequested = (answer: Answer, questionMarkedAsImperfect: boolean, navigateToStepIndex?: number) => {
+    quizStore.saveAnswer(answer, questionMarkedAsImperfect, navigateToStepIndex);
   };
 
   return <div>
@@ -26,7 +26,10 @@ const Quiz: React.FC<Props> = observer(() => {
       quizStore.quizStatus === 'started' 
       && quizStore.currentQuiz 
       && quizStore.currentQuizStep 
-      ? <QuizStep key={quizStore.currentQuizStep.id} quizModel={quizStore.currentQuiz} quizStepModel={quizStore.currentQuizStep} onAnswerSavingRequested={onAnswerSavingRequested}/> 
+      ? <QuizStep key={quizStore.currentQuizStep.id} 
+        quizModel={quizStore.currentQuiz} 
+        quizStepModel={quizStore.currentQuizStep} 
+        onAnswerSavingRequested={onAnswerSavingRequested}/> 
       : null
     }
 
