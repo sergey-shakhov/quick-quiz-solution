@@ -5,10 +5,11 @@ import isEqual from 'lodash/isEqual';
 import map from 'lodash/map';
 import filter from 'lodash/filter';
 import trim from 'lodash/trim';
+import mean from 'lodash/mean';
 
-import { AnswerOption, QuizQuestionType, Answer } from './models/stored/QuizStep';
+import { AnswerOption, QuizQuestionType, Answer, QuizStepScoringAlgorithm } from './models/stored/QuizStep';
 
-function calculateQuizStepScore(type: QuizQuestionType, answerOptions: AnswerOption[], answer: Answer): number {
+function calculateQuizStepScore(type: QuizQuestionType, answerOptions: AnswerOption[], answer: Answer, scoringAlgorithm?: QuizStepScoringAlgorithm): number {
   switch (type) {
     case 'single-choice':
       return calculateSingleChoiceQuestionScore(answerOptions, answer);
@@ -33,12 +34,18 @@ function calculateSingleChoiceQuestionScore(answerOptions: AnswerOption[], answe
   return 0.0;
 }
 
-function calculateMultipleChoiceQuestionScore(answerOptions: AnswerOption[], answer: Answer): number {
+function calculateMultipleChoiceQuestionScore(answerOptions: AnswerOption[], answer: Answer, scoringAlgorithm?: QuizStepScoringAlgorithm): number {
   if (isArray(answer)) {
     const correctAnswer = map(answerOptions, (option: AnswerOption) => option.isCorrect);
-    if (isEqual(answer, correctAnswer)) {
-      return 1.0;
+    if (scoringAlgorithm === 'strict') {
+      if (isEqual(answer, correctAnswer)) {
+        return 1.0;
+      }
+    } else {
+      const matches = map(correctAnswer, (correctAnswerItem: boolean, answerItemIndex: number) => isEqual(answer[answerItemIndex], correctAnswerItem) ? 1.0 : 0.0);
+      return mean(matches);
     }
+    
   }
   return 0.0;
 }

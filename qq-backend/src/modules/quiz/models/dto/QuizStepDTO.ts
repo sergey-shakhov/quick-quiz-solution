@@ -1,5 +1,7 @@
 export type QuizQuestionTypeDTO = 'single-choice' | 'multiple-choice' | 'text-input';
 
+export type QuizStepScoringAlgorithmDTO = 'default' | 'strict';
+
 export type AnswerOptionDTO = {
   answerTextInMarkdown: string;
 };
@@ -18,6 +20,7 @@ type QuizStepDTO = {
   quizId: string;
   stepIndex: number;
   type: QuizQuestionTypeDTO;
+  scoringAlgorithm?: QuizStepScoringAlgorithmDTO;
   questionTextInMarkdown: string;
   answerOptions: AnswerOptionDTO[];
   answer?: Answer;

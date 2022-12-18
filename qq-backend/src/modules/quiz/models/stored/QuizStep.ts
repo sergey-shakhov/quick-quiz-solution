@@ -1,6 +1,6 @@
 import { Model, InferAttributes, InferCreationAttributes, CreationOptional, Sequelize, DataTypes } from 'sequelize';
 import { DateTime } from '../../../time';
-import { QuizQuestionTypeDTO } from '../dto/QuizStepDTO';
+import { QuizQuestionTypeDTO, QuizStepScoringAlgorithmDTO } from '../dto/QuizStepDTO';
 
 export type AnswerOption = {
   answerTextInMarkdown: string;
@@ -12,12 +12,15 @@ export type Answer = any;
 
 export type QuizQuestionType = QuizQuestionTypeDTO;
 
+export type QuizStepScoringAlgorithm = QuizStepScoringAlgorithmDTO;
+
 class QuizStep extends Model<InferAttributes<QuizStep>, InferCreationAttributes<QuizStep>> {
   declare id: CreationOptional<string>;
   declare quizId: string;
   declare stepIndex: number;
   declare quizQuestionTemplateId: string;
   declare type: QuizQuestionType;
+  declare scoringAlgorithm: QuizStepScoringAlgorithm | null;
   declare skills?: string[];
   declare questionTextInMarkdown: string;
   declare answerOptions: AnswerOption[];
@@ -49,6 +52,10 @@ function initializeQuizStepModel(sequelize: Sequelize) {
     type: {
       type: DataTypes.ENUM('single-choice', 'multiple-choice', 'text-input'),
       allowNull: false,
+    },
+    scoringAlgorithm: {
+      type: DataTypes.ENUM('default', 'strict'),
+      allowNull: true,
     },
     skills: {
       type: DataTypes.JSON,
