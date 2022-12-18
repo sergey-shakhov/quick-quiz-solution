@@ -5,6 +5,7 @@ import cookieParser from'cookie-parser';
 import bodyParser from 'body-parser';
 import { Sequelize } from 'sequelize';
 import 'pg';
+import { Umzug, SequelizeStorage } from 'umzug';
 
 import {
   createQuizRouter,
@@ -59,10 +60,20 @@ async function startEventListener(options: WebAppOptions) {
 
   const databaseConfiguration = configuration.get<DatabaseConfiguration>(DATABASE_CONFIGURATION);
   const sequelize = new Sequelize(databaseConfiguration.connectionUrl);
+
+  const umzug = new Umzug({
+    migrations: { glob: 'src/migrations/*.ts' },
+    context: sequelize.getQueryInterface(),
+    storage: new SequelizeStorage({ sequelize }),
+    logger: console,
+  });
+
+  await umzug.up();
+
   await initializeQuizModel(sequelize);
   await initializeQuizStepModel(sequelize);
   await sequelize.sync();
-
+  
   const moduleContext = {
     sequelize,
     configuration,

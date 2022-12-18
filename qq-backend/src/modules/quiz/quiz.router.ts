@@ -4,7 +4,7 @@ import { ModuleContext } from '../../app.types';
 import { ForbiddenError, handleErrorSecurely, ValidationError } from '../../app.web.common';
 import ServiceConfiguration, { SERVICE_CONFIGURATION } from './models/config/ServiceConfiguration';
 import { quizStepStoredToDTO, quizStoredToDTO } from './models/translators';
-import { createQuiz, getQuiz, getStep, updateStep, updateQuizStatus } from './quiz';
+import { createQuiz, getQuiz, getStep, updateStep, updateQuizStatus, getQuizScore, updateQuizScore } from './quiz';
 
 import { generateQuizId } from './utils/crypt';
 import { hasOnly } from './utils/keyUtil';
@@ -62,15 +62,22 @@ function createQuizRouter(context: ModuleContext): Router {
   router.patch('/:quizId', async (req: Request<{quizId: string}>, res: Response) => {
     try {
       const { quizId } = req.params;
-
       const { status } = req.body;
 
-      const quiz = await updateQuizStatus(context, quizId, status);
+      const quiz = await (async () => {
+        if (status === 'updatingScore') {
+          // Virtual transitional status to update quiz score
+          // Available to admin only
+          checkAuthorization(req);
+          return await updateQuizScore(context, quizId);
+        } else {
+          return await updateQuizStatus(context, quizId, status);
+        }
+      })();
       res.json(quizStoredToDTO(quiz));
     } catch (error) {
       handleErrorSecurely(error, res);
     }
-    
   });
 
   router.get('/:quizId/steps/:stepIndexAsString', async (req: Request<{quizId: string, stepIndexAsString: string}>, res: Response) => {
@@ -96,6 +103,17 @@ function createQuizRouter(context: ModuleContext): Router {
 
       const { quizStep } = await updateStep(context, quizId, parseInt(stepIndexAsString), answer, questionMarkedAsImperfect);
       res.json(quizStepStoredToDTO(quizStep));
+    } catch (error) {
+      handleErrorSecurely(error, res);
+    }
+  });
+
+  router.get('/:quizId/score', async (req: Request<{quizId: string}>, res: Response) => {
+    try {
+      checkAuthorization(req);
+      const { quizId } = req.params;
+      const score = await getQuizScore(context, quizId);
+      res.json(score);
     } catch (error) {
       handleErrorSecurely(error, res);
     }

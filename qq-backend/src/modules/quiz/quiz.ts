@@ -6,6 +6,7 @@ import shuffle from 'lodash/shuffle';
 import map from 'lodash/map';
 import sortBy from 'lodash/sortBy';
 import toString from 'lodash/toString';
+import isEmpty from 'lodash/isEmpty';
 
 import { ModuleContext } from '../../app.types';
 import { BaseError } from '../../app.web.common';
@@ -49,6 +50,32 @@ async function getQuiz(moduleContext: ModuleContext, quizId: string): Promise<Qu
   return quiz;
 }
 
+async function getAllQuizSteps(moduleContext: ModuleContext, quizId: string): Promise<QuizStep[]> {
+  const quizSteps = await QuizStep.findAll({
+    where: {
+      quizId,
+    },
+  });
+  if (isEmpty(quizSteps)) {
+    throw new NotFoundError(`Cannot find quiz steps for quiz with id ${quizId}`);
+  }
+  return quizSteps;
+}
+
+async function calculateQuizScore(quiz: Quiz, quizSteps: QuizStep[], onStepScoreCalculated?: (quizStep: QuizStep, stepScore: number) => Promise<void>): Promise<number> {
+  let allStepScoreSum = 0;
+
+  for (let i = 0; i < quizSteps.length; i++) {
+    const quizStep = quizSteps[i];
+    const stepScore = calculateQuizStepScore(quizStep.type, quizStep.answerOptions, quizStep.answer);
+    if (onStepScoreCalculated) {
+      await onStepScoreCalculated(quizStep, stepScore);
+    }
+    allStepScoreSum += stepScore;
+  }
+  return allStepScoreSum / quizSteps.length
+}
+
 async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: Quiz, status: QuizStatus): Promise<Quiz> {
   const now = currentDateTime();
 
@@ -56,25 +83,16 @@ async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: 
 
   const transaction = await moduleContext.sequelize.transaction();
   try {
-    const quizSteps = await QuizStep.findAll({
-      where: {
-        quizId,
-      },
-    });
+    const quizSteps = await getAllQuizSteps(moduleContext, quizId);
 
-    let allStepScoreSum = 0;
-
-    for (let i = 0; i < quizSteps.length; i++) {
-      const quizStep = quizSteps[i];
-      const stepScore = calculateQuizStepScore(quizStep.type, quizStep.answerOptions, quizStep.answer);
+    const quizScore = await calculateQuizScore(quiz, quizSteps, async (quizStep: QuizStep, stepScore: number) => {
       quizStep.score = stepScore;
       await quizStep.save({
         transaction,
       });
-      allStepScoreSum += stepScore;
-    }
+    });    
 
-    quiz.score = allStepScoreSum / quizSteps.length;
+    quiz.score = quizScore;
     quiz.status = status; 
     quiz.finishedAt = now;
     await quiz.save({
@@ -170,6 +188,33 @@ async function updateQuizStatus(moduleContext: ModuleContext, quizId: string, st
   }
 
   return quiz;
+}
+
+async function updateQuizScore(moduleContext: ModuleContext, quizId: string): Promise<Quiz> {
+  const transaction = await moduleContext.sequelize.transaction();
+  try {
+    const quiz = await getQuiz(moduleContext, quizId);
+    const quizSteps = await getAllQuizSteps(moduleContext, quizId);
+
+    const quizScore = await calculateQuizScore(quiz, quizSteps, async (quizStep: QuizStep, stepScore: number) => {
+      quizStep.score = stepScore;
+      await quizStep.save({
+        transaction,
+      });
+    });
+
+    quiz.score = quizScore;
+    await quiz.save({
+      transaction,
+    });
+    transaction.commit();
+
+    console.log(`Score recalculated. ${quiz.assigneeFirstName} ${quiz.assigneeLastName} has ${quiz.score} for quiz ${quiz.id}.`);
+    return quiz;
+  } catch (err) {
+    transaction.rollback();
+    throw new QuizProcessingError('Cannot recalculate quiz score', err);
+  }
 }
 
 // TODO where should this type be located?
@@ -369,16 +414,21 @@ async function updateStep(moduleContext: ModuleContext, quizId: string, stepInde
   } catch (err) {
     transaction.rollback();
     throw new QuizProcessingError('Cannot update quiz step', err);
-  }
-  
+  } 
+}
+
+async function getQuizScore(moduleContext: ModuleContext, quizId: string): Promise<number> {
+  return await calculateQuizScore(await getQuiz(moduleContext, quizId), await getAllQuizSteps(moduleContext, quizId));  
 }
 
 export {
   getQuiz,
   updateQuizStatus,
+  updateQuizScore,
   createQuiz,
   getStep,
   updateStep,
+  getQuizScore,
   NotFoundError,
   WrongStatusError,
   InaccessibleStepError,

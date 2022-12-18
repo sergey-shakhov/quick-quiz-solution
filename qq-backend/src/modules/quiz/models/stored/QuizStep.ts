@@ -98,7 +98,7 @@ function initializeQuizStepModel(sequelize: Sequelize) {
     tableName: 'QuizStep',
     sequelize,
   });
-  
+    
 }
 
 export {
