@@ -3,20 +3,18 @@ import sumBy from 'lodash/sumBy';
 import filter from 'lodash/filter';
 import concat from 'lodash/concat';
 import shuffle from 'lodash/shuffle';
-import map from 'lodash/map';
-import sortBy from 'lodash/sortBy';
-import toString from 'lodash/toString';
 import isEmpty from 'lodash/isEmpty';
 
 import { ModuleContext } from '../../app.types';
 import { BaseError } from '../../app.web.common';
-import { Quiz, QuizDTO, QuizCreationDTO, QuizStatus, Answer } from './models';
+import { Quiz, QuizStatus, Answer } from './models';
 import { newId } from './utils/idUtil';
-import { currentDateTime, DateTime, addSeconds, scheduleAt, formatForDisplaying, formatDuration, differenceInSeconds } from '../time';
+import { currentDateTime, DateTime, addSeconds, scheduleAt } from '../time';
 import QuizStep, { AnswerOption } from './models/stored/QuizStep';
 import { templateByTechnicalName } from './quiz.templates';
 import { calculateQuizStepScore } from './quiz.scoring';
-import { NotificationConfiguration, NOTIFICATION_CONFIGURATION, notify } from '../notifications';
+import { sendQuizScoreNotification, sendQuizInvitation } from './quiz.notifications';
+
 
 class NotFoundError extends BaseError {
   constructor(message: string) {
@@ -103,41 +101,7 @@ async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: 
     console.log(`${quiz.assigneeFirstName} ${quiz.assigneeLastName} got ${quiz.score} for quiz ${quiz.id}.`);
 
     setTimeout(() => {
-      const threshold = 0.7;
-      const success = quiz.score && quiz.score >= threshold;
-      const status = success ?  'positive' : 'negative';
-      const scoreAsString = quiz.score ? quiz.score.toFixed(2) : '-';
-      const subject = `${quiz.assigneeFirstName} ${quiz.assigneeLastName} - ${success ? 'успешное завершение теста' : 'тест не пройден'}`;
-      const summary = `${success ? 'Тест успешно пройден.' : 'Тест не пройден.' } ${quiz.assigneeFirstName} ${quiz.assigneeLastName} ${success ? 'радует нас высоким результатом' : 'будет сдавать тест повторно, получив результат'} ${scoreAsString}`;
-      const tableData = map(sortBy(quizSteps, 'stepIndex'), (quizStep) => ([quizStep.stepIndex+1, (quizStep.skills || []).join(', '), !!quizStep.score && quizStep.score > 0.5]));
-      notify(moduleContext, {
-        status,
-        subject,
-        summary,
-        params: [
-          {
-            key: 'Результат теста',
-            value: scoreAsString,
-          },
-          {
-            key: 'Число вопросов',
-            value: toString(quizSteps.length),
-          },
-          {
-            key: 'Фактическая длительность',
-            value: (quiz.finishedAt && quiz.startedAt) ? formatDuration(differenceInSeconds(quiz.finishedAt, quiz.startedAt)) : '-',
-          },
-          {
-            key: 'Запланированная длительность',
-            value: formatDuration(quiz.durationInSeconds),
-          },
-
-        ],
-        tableData,
-        details: '',
-        conclusion: '',
-      }, moduleContext.configuration.get<NotificationConfiguration>(NOTIFICATION_CONFIGURATION).smtp.organizerEmail);
-
+      sendQuizScoreNotification(moduleContext, quiz, quizSteps);
     }, 1);
 
     return quiz;
@@ -145,7 +109,12 @@ async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: 
     transaction.rollback();
     throw new QuizProcessingError('Cannot finish quiz and calculate score', err);
   }  
+}
 
+async function resendQuizScoreNotification(moduleContext: ModuleContext, quizId: string): Promise<void> {
+  const quiz = await getQuiz(moduleContext, quizId);
+  const quizSteps = await getAllQuizSteps(moduleContext, quizId);
+  sendQuizScoreNotification(moduleContext, quiz, quizSteps);
 }
 
 async function updateQuizStatus(moduleContext: ModuleContext, quizId: string, status: QuizStatus): Promise<Quiz> {
@@ -310,34 +279,7 @@ async function createQuiz(moduleContext: ModuleContext, quizCreationParams: Quiz
 
     setTimeout(() => {
       // Send notification
-      const href = `https://qq.shakhov.online/quiz/${quizId}`;
-      notify(moduleContext, {
-        summary: `${quizCreationParams.assignee.firstName}, приглашаем вас пройти тестирование "${quizCreationParams.quizName}".`,
-        status: 'neutral',
-        subject: `Ссылка на тест "${quizCreationParams.quizName}"`,
-        params: [
-          {
-            key: 'Число вопросов',
-            value: toString(selectedQuestionTemplates.length),
-          },
-          {
-            key: 'Тест доступен до',
-            value: formatForDisplaying(quiz.expiresAt),
-          },
-          {
-            key: 'Длительность',
-            value: formatDuration(quiz.durationInSeconds),
-          },
-        ],
-        details: 'После нажатия на кнопку вы попадёте на страницу теста, где нужно будет запустить тестирование. Успехов вам!',
-        action: {
-          text: 'Перейти к странице теста',
-          href,
-        },
-        conclusion: '',
-      }, moduleContext.configuration.get<NotificationConfiguration>(NOTIFICATION_CONFIGURATION).smtp.organizerEmail);
-
-      
+      sendQuizInvitation(moduleContext, quiz, selectedQuestionTemplates.length);
     }, 1);
 
     return quiz;
@@ -429,6 +371,7 @@ export {
   getStep,
   updateStep,
   getQuizScore,
+  resendQuizScoreNotification,
   NotFoundError,
   WrongStatusError,
   InaccessibleStepError,

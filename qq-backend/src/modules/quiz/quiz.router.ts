@@ -4,9 +4,8 @@ import { ModuleContext } from '../../app.types';
 import { ForbiddenError, handleErrorSecurely, ValidationError } from '../../app.web.common';
 import ServiceConfiguration, { SERVICE_CONFIGURATION } from './models/config/ServiceConfiguration';
 import { quizStepStoredToDTO, quizStoredToDTO } from './models/translators';
-import { createQuiz, getQuiz, getStep, updateStep, updateQuizStatus, getQuizScore, updateQuizScore } from './quiz';
+import { createQuiz, getQuiz, getStep, updateStep, updateQuizStatus, getQuizScore, updateQuizScore, resendQuizScoreNotification } from './quiz';
 
-import { generateQuizId } from './utils/crypt';
 import { hasOnly } from './utils/keyUtil';
 
 function createQuizRouter(context: ModuleContext): Router {
@@ -119,8 +118,21 @@ function createQuizRouter(context: ModuleContext): Router {
     }
   });
 
-  return router;
+  router.post('/:quizId/scoreNotifications', async (req: Request<{quizId: string}>, res: Response) => {
+    try {
+      checkAuthorization(req);
+      const { quizId } = req.params;
+      await resendQuizScoreNotification(context, quizId);
+      const notification = {
+        status: 'sent',
+      };
+      res.json(notification);
+    } catch (error) {
+      handleErrorSecurely(error, res);
+    }
+  });
 
+  return router;
 }
 
 export {
