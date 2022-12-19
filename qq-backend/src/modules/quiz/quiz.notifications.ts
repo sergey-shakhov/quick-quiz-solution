@@ -1,6 +1,7 @@
 import map from 'lodash/map';
 import sortBy from 'lodash/sortBy';
 import toString from 'lodash/toString';
+import isNumber from 'lodash/isNumber';
 
 import { ModuleContext } from '../../app.types';
 
@@ -17,7 +18,7 @@ export function sendQuizScoreNotification(moduleContext: ModuleContext, quiz: Qu
   const scoreAsString = quiz.score ? quiz.score.toFixed(2) : '-';
   const subject = `${quiz.assigneeFirstName} ${quiz.assigneeLastName} - ${success ? 'успешное завершение теста' : 'тест не пройден'}`;
   const summary = `${success ? 'Тест успешно пройден.' : 'Тест не пройден.' } ${quiz.assigneeFirstName} ${quiz.assigneeLastName} ${success ? 'радует нас высоким результатом' : 'будет сдавать тест повторно, получив результат'} ${scoreAsString}`;
-  const tableData = map(sortBy(quizSteps, 'stepIndex'), (quizStep) => ([quizStep.stepIndex+1, (quizStep.skills || []).join(', '), !!quizStep.score && quizStep.score > 0.5]));
+  const tableData = map(sortBy(quizSteps, 'stepIndex'), (quizStep) => ([quizStep.stepIndex+1, (quizStep.skills || []).join(', '), isNumber(quizStep.score) ? quizStep.score.toFixed(2) : '-']));
   notify(moduleContext, {
     status,
     subject,
