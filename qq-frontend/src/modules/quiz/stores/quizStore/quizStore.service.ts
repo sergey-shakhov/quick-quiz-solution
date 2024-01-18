@@ -1,8 +1,9 @@
 import axios from 'axios';
 import QuizModel, { QuizStatus } from './models/QuizModel';
 import QuizStepModel, { Answer } from './models/QuizStepModel';
+import { REACT_APP_BASE_API_URL } from '../../../../config';
 
-const baseUrl = 'http://localhost:8080';
+const baseUrl = REACT_APP_BASE_API_URL;
 
 const service = {
   async getQuiz(quizId: string): Promise<QuizModel> {
@@ -10,7 +11,7 @@ const service = {
   },
 
   async patchQuizStatus(quizId: string, status: QuizStatus): Promise<QuizModel> {
-    return axios.patch(`${baseUrl}/quizzes/${quizId}`, { 
+    return axios.patch(`${baseUrl}/quizzes/${quizId}`, {
       status,
     }).then((response) => response.data as QuizModel);
   },
