@@ -17,7 +17,7 @@ import DatabaseConfiguration, { DATABASE_CONFIGURATION } from './modules/quiz/mo
 import ServiceConfiguration, { SERVICE_CONFIGURATION } from './modules/quiz/models/config/ServiceConfiguration';
 
 const defaultHttpPort = 8080;
-const defaultHttpHost = '127.0.0.1';
+const defaultHttpHost = '0.0.0.0';
 const defaultConfigDirectory = 'etc';
 
 type WebAppOptions = {
