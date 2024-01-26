@@ -6,6 +6,69 @@ import QuizDTO from './dto/QuizDTO';
 import QuizStep, { AnswerOption } from './stored/QuizStep';
 import QuizStepDTO, { AnswerOptionDTO } from './dto/QuizStepDTO';
 
+/**
+ * @swagger
+ * definitions:
+ *   AnyValue:
+ *     anyOf:
+ *       - type: string
+ *       - type: number
+ *       - type: integer
+ *       - type: boolean
+ *       - type: array
+ *         items: {}
+ *       - type: object
+ */
+
+/**
+ * @swagger
+ * definitions:
+ *   Assignee:
+ *     type: object
+ *     properties:
+ *       firstName:
+ *         type: string
+ *         example: Fyodor
+ *       lastName:
+ *         type: string
+ *         example: Dostoevsky
+ *       email:
+ *         type: string
+ *         example: dostoevsky@example.com
+ */
+
+/**
+ * @swagger
+ * definitions:
+ *   Quiz:
+ *     properties:
+ *       id:
+ *         type: string
+ *       quizTemplateTechnicalName:
+ *         type: string
+ *       quizName:
+ *         type: string
+ *       assignee:
+ *         $ref: '#/definitions/Assignee'
+ *       status:
+ *         type: string
+ *       createdAt:
+ *         type: string
+ *       updatedAt:
+ *         type: string
+ *       expiresAt:
+ *         type: string
+ *       startedAt:
+ *         type: string
+ *       finishedAt:
+ *         type: string
+ *       durationInSeconds:
+ *         type: number
+ *       stepCount:
+ *         type: number
+ *       remainingTimeInSeconds:
+ *         type: number
+ */
 const quizStoredToDTO = (quiz: Quiz): QuizDTO => {
   return {
     id: quiz.id,
@@ -27,7 +90,43 @@ const quizStoredToDTO = (quiz: Quiz): QuizDTO => {
     remainingTimeInSeconds: (quiz.status === 'started' && quiz.startedAt) ? quiz.durationInSeconds - differenceInSeconds(currentDateTime(), quiz.startedAt) : undefined,
   };
 };
+/**
+ * @swagger
+ * definitions:
+ *   AnswerOption:
+ *     properties:
+ *       answerTextInMarkdown:
+ *         type: string
+ */
 
+/**
+ * @swagger
+ * definitions:
+ *   QuizStep:
+ *     properties:
+ *       id:
+ *         type: string
+ *       quizId:
+ *         type: string
+ *       stepIndex:
+ *         type: number
+ *       type:
+ *         type: string
+ *       questionTextInMarkdown:
+ *         type: string
+ *       answerOptions:
+ *         type: array
+ *         items:
+ *          $ref: '#/definitions/AnswerOption'
+ *       answer:
+ *         $ref: '#/definitions/AnyValue'
+ *       questionMarkedAsImperfect:
+ *         type: boolean
+ *       createdAt:
+ *         type: string
+ *       answerSubmittedAt:
+ *         type: string
+ */
 const quizStepStoredToDTO = (quizStep: QuizStep): QuizStepDTO => {
   const answerOptionStoredToDTO = (answerOption: AnswerOption): AnswerOptionDTO => ({
     answerTextInMarkdown: answerOption.answerTextInMarkdown,
