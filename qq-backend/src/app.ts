@@ -8,8 +8,8 @@ const commandModules = [
 
 function runApp() {
 
-  _.each(commandModules, (commanModule) => {
-    const { initialize } = commanModule;
+  _.each(commandModules, (commonModule) => {
+    const { initialize } = commonModule;
     initialize(program);
   });
 

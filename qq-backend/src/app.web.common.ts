@@ -37,6 +37,12 @@ class BaseError extends Error {
   }
 }
 
+/**
+ * @swagger
+ * responses:
+ *    ForbiddenError:
+ *       description: You do not have enough privileges to perform this operation
+ */
 class ForbiddenError extends BaseError {
   constructor(message: string) {
     super(message || 'You do not have enough privileges to perform this operation', 403);
@@ -49,6 +55,12 @@ class NotAuthenticatedError extends BaseError {
   }
 }
 
+/**
+ * @swagger
+ * responses:
+ *    ValidationError:
+ *       description: Validation failed
+ */
 class ValidationError extends BaseError {
   constructor(message: string | undefined = undefined) {
     super(message || 'Validation failed', 422);

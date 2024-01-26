@@ -17,6 +17,12 @@ import { templateByTechnicalName } from './quiz.templates';
 import { calculateQuizStepScore } from './quiz.scoring';
 import { NotificationConfiguration, NOTIFICATION_CONFIGURATION, notify } from '../notifications';
 
+/**
+ * @swagger
+ * responses:
+ *    NotFoundError:
+ *       description: Not found
+ */
 class NotFoundError extends BaseError {
   constructor(message: string) {
     super(message);
@@ -75,7 +81,7 @@ async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: 
     }
 
     quiz.score = allStepScoreSum / quizSteps.length;
-    quiz.status = status; 
+    quiz.status = status;
     quiz.finishedAt = now;
     await quiz.save({
       transaction,
@@ -126,7 +132,7 @@ async function finishQuizAndCalculateScores(moduleContext: ModuleContext, quiz: 
   } catch (err) {
     transaction.rollback();
     throw new QuizProcessingError('Cannot finish quiz and calculate score', err);
-  }  
+  }
 
 }
 
@@ -143,7 +149,7 @@ async function updateQuizStatus(moduleContext: ModuleContext, quizId: string, st
 
     // TODO check expiresAt
 
-    quiz.status = 'started'; 
+    quiz.status = 'started';
     quiz.startedAt = now;
     await quiz.save();
 
@@ -219,7 +225,7 @@ async function createQuiz(moduleContext: ModuleContext, quizCreationParams: Quiz
           // No specific randomization algorithm for text-input so far
           return questionTemplate.answerOptions;
         }
-        
+
       };
 
       const quizStep = await QuizStep.create({
@@ -292,7 +298,7 @@ async function createQuiz(moduleContext: ModuleContext, quizCreationParams: Quiz
         conclusion: '',
       }, moduleContext.configuration.get<NotificationConfiguration>(NOTIFICATION_CONFIGURATION).smtp.organizerEmail);
 
-      
+
     }, 1);
 
     return quiz;
@@ -312,7 +318,7 @@ async function getQuizAndStep(quizId: string, stepIndex: number): Promise<{ quiz
   if (stepIndex > quiz.latestStepIndex) {
     throw new InaccessibleStepError(`Latest accessible step index is ${quiz.latestStepIndex}`);
   }
-  
+
   const quizStep = await QuizStep.findOne({
     where: {
       quizId,
@@ -354,7 +360,7 @@ async function updateStep(moduleContext: ModuleContext, quizId: string, stepInde
       quiz.updatedAt = now;
     }
     await quiz.save();
-    
+
     quizStep.answer = answer;
     quizStep.questionMarkedAsImperfect = questionMarkedAsImperfect;
     quizStep.answerSubmittedAt = now;
@@ -370,7 +376,7 @@ async function updateStep(moduleContext: ModuleContext, quizId: string, stepInde
     transaction.rollback();
     throw new QuizProcessingError('Cannot update quiz step', err);
   }
-  
+
 }
 
 export {

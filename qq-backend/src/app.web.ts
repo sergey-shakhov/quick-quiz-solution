@@ -1,10 +1,12 @@
-import _ from 'lodash';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
 import { Command } from 'commander';
-import express, { Request, Response } from 'express';
-import cookieParser from'cookie-parser';
+import express, { Request } from 'express';
+import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import { Sequelize } from 'sequelize';
 import 'pg';
+import { version } from '../package.json';
 
 import {
   createQuizRouter,
@@ -20,6 +22,17 @@ const defaultHttpPort = 8080;
 const defaultHttpHost = '0.0.0.0';
 const defaultConfigDirectory = 'etc';
 
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: { title: 'QuickQuiz', version },
+  },
+  apis: [
+    './src/modules/quiz/**/*.ts',
+    './src/app.web.common.ts',
+  ],
+};
+
 type WebAppOptions = {
   httpPort?: number;
   httpHost?: string;
@@ -29,6 +42,8 @@ type WebAppOptions = {
 async function startEventListener(options: WebAppOptions) {
   const configDirectory = options.configDirectory || defaultConfigDirectory;
 
+  const swaggerSpec = swaggerJSDoc(swaggerOptions);
+  console.log(swaggerSpec);
   const configuration = await loadConfiguration(configDirectory);
   const serviceConfiguration = configuration.get<ServiceConfiguration>(SERVICE_CONFIGURATION);
 
@@ -40,6 +55,7 @@ async function startEventListener(options: WebAppOptions) {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
