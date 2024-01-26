@@ -43,6 +43,7 @@ async function startEventListener(options: WebAppOptions) {
   const configDirectory = options.configDirectory || defaultConfigDirectory;
 
   const swaggerSpec = swaggerJSDoc(swaggerOptions);
+  console.log(swaggerSpec);
   const configuration = await loadConfiguration(configDirectory);
   const serviceConfiguration = configuration.get<ServiceConfiguration>(SERVICE_CONFIGURATION);
 

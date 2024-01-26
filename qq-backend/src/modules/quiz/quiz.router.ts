@@ -19,6 +19,16 @@ function createQuizRouter(context: ModuleContext): Router {
 
   const serviceConfiguration = context.configuration.get<ServiceConfiguration>(SERVICE_CONFIGURATION);
 
+
+  /**
+   * @swagger
+   * components:
+   *   securitySchemes:
+   *     ApiKeyAuth:
+   *       type: apiKey
+   *       in: header
+   *       name: x-api-key
+   */
   function checkAuthorization(req: Request) {
     if (serviceConfiguration.apiKey && (req.headers['x-api-key'] !== serviceConfiguration.apiKey)) {
       throw new ForbiddenError('You cannot access this URI without API Key');
@@ -90,6 +100,8 @@ function createQuizRouter(context: ModuleContext): Router {
    *                  description: Expire date
    *                  example: 2023-06-10
    *                  type: string
+   *     security:
+   *       - ApiKeyAuth: []
    *     responses:
    *       200:
    *         description: Returns a new quiz.
