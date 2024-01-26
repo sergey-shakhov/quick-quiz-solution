@@ -1,0 +1,184 @@
+kind: pipeline
+type: docker
+name: qq_dev
+
+steps:
+  - name: detect_code_changes
+    image: git:2.37.0
+    commands:
+      - git diff $DRONE_COMMIT_BEFORE $DRONE_COMMIT > git.diff;
+        grep '[ab]/qq-backend/' git.diff > qq-back.flag || echo;
+        grep '[ab]/qq-frontend/' git.diff > qq-front.flag || echo;
+
+  - name: yarn_install_backend
+    image: node:18.19.0-alpine
+    environment:
+      NPM_REGISTRY:
+        from_secret: NPM_REGISTRY
+      NPM_TOKEN:
+        from_secret: NPM_TOKEN
+    commands:
+      - if [ -s qq-back.flag ]; then
+          scripts/cicd/yarn_install.sh qq-backend $NPM_REGISTRY $NPM_TOKEN;
+        else
+          echo "No changes in qq-backend! Don't install yarn!";
+        fi
+    depends_on:
+      - detect_code_changes
+
+  - name: build_and_push_img_backend
+    image: docker:dind
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_TOKEN:
+        from_secret: DOCKER_TOKEN
+      DOCKER_REGISTRY:
+        from_secret: DOCKER_REGISTRY
+    commands:
+      - if [ -s qq-back.flag ]; then
+          sleep 5;
+          export BRANCH=$DRONE_BRANCH;
+          if [ $BRANCH != main ]; then export BRANCH=development; fi;
+          scripts/cicd/build_image.sh
+            qq-backend $DOCKER_REGISTRY qq-backend $BRANCH;
+          scripts/cicd/push_image.sh
+            $DOCKER_TOKEN $DOCKER_REGISTRY qq-backend $BRANCH;
+        else
+          echo "No changes in qq-backend! Don't build image!";
+        fi
+    depends_on:
+      - docker_service_start
+      - yarn_install_backend
+
+  - name: deploy_backend
+    image: alpine/ssh:3.15.0
+    environment:
+      QQ_API_KEY:
+        from_secret: QQ_API_KEY
+      QQ_DB_PASSWORD:
+        from_secret: QQ_DB_PASSWORD
+      HOST:
+        from_secret: HOST_PROD
+      HOST_DEV:
+        from_secret: HOST_DEV
+      DOCKER_REGISTRY:
+        from_secret: DOCKER_REGISTRY
+    volumes:
+      - name: ssh
+        path: /root/.ssh
+    commands:
+      - if [ -s qq-back.flag ]; then
+          export BRANCH=$DRONE_BRANCH;
+          if [ $BRANCH != main ]; then
+            export BRANCH=development;
+            export HOST=$HOST_DEV;
+          fi;
+          scripts/cicd/save_env_backend.sh
+            $QQ_API_KEY $QQ_DB_PASSWORD $HOST $BRANCH $DOCKER_REGISTRY;
+          scp -oStrictHostKeyChecking=no scripts/cicd/create_backend*
+            qq@$HOST:~/qq/qq-backend/scripts;
+          ssh -oStrictHostKeyChecking=no qq@$HOST
+            qq/qq-backend/scripts/create_backend_compose_up.sh;
+        else
+          echo "No changes in qq-backend! Don't deploy!";
+        fi
+    depends_on:
+      - build_and_push_img_backend
+
+  - name: yarn_install_frontend
+    image: node:18.19.0-alpine
+    environment:
+      NPM_REGISTRY:
+        from_secret: NPM_REGISTRY
+      NPM_TOKEN:
+        from_secret: NPM_TOKEN
+    commands:
+      - if [ -s qq-front.flag ]; then
+          scripts/cicd/yarn_install.sh qq-frontend $NPM_REGISTRY $NPM_TOKEN;
+        else
+          echo "No changes in qq-frontend! Don't install yarn!";
+        fi
+    depends_on:
+      - detect_code_changes
+
+  - name: build_and_push_img_frontend
+    image: docker:dind
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_TOKEN:
+        from_secret: DOCKER_TOKEN
+      DOCKER_REGISTRY:
+        from_secret: DOCKER_REGISTRY
+    commands:
+      - if [ -s qq-front.flag ]; then
+          sleep 5;
+          export BRANCH=$DRONE_BRANCH;
+          if [ $BRANCH != main ]; then export BRANCH=development; fi;
+          scripts/cicd/build_image.sh
+            qq-frontend $DOCKER_REGISTRY qq-frontend $BRANCH;
+          scripts/cicd/push_image.sh
+            $DOCKER_TOKEN $DOCKER_REGISTRY qq-frontend $BRANCH;
+        else
+          echo "No changes in qq-frontend! Don't build image!";
+        fi
+    depends_on:
+      - docker_service_start
+      - yarn_install_frontend
+
+  - name: deploy_frontend
+    image: alpine/ssh:3.15.0
+    environment:
+      HOST:
+        from_secret: HOST_PROD
+      HOST_DEV:
+        from_secret: HOST_DEV
+      DOCKER_REGISTRY:
+        from_secret: DOCKER_REGISTRY
+    volumes:
+      - name: ssh
+        path: /root/.ssh
+    commands:
+      - if [ -s qq-front.flag ]; then
+          export BRANCH=$DRONE_BRANCH;
+          if [ $BRANCH != main ]; then
+            export BRANCH=development;
+            export HOST=$HOST_DEV;
+          fi;
+          scripts/cicd/save_env_frontend.sh
+            $HOST $BRANCH $DOCKER_REGISTRY;
+          scp -oStrictHostKeyChecking=no scripts/cicd/create_frontend*
+            qq@$HOST:~/qq/qq-frontend/scripts;
+          ssh -oStrictHostKeyChecking=no qq@$HOST
+            qq/qq-frontend/scripts/create_frontend_compose_up.sh;
+        else
+          echo "No changes in qq-frontend! Don't deploy!";
+        fi
+    depends_on:
+      - build_and_push_img_frontend
+
+services:
+  - name: docker_service_start
+    image: docker:dind
+    privileged: true
+    volumes:
+    - name: dockersock
+      path: /var/run
+
+volumes:
+  - name: dockersock
+    temp: {}
+  - name: ssh
+    host:
+      path: /root/.ssh
+
+trigger:
+  branch:
+    - main
+    - develop
+  event:
+    exclude:
+      - pull_request
